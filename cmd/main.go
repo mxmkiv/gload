@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"sync"
@@ -11,15 +12,34 @@ import (
 	"github.com/mxmkiv/gload/internal/config"
 	"github.com/mxmkiv/gload/internal/metrics"
 	"github.com/mxmkiv/gload/internal/runners"
+	"github.com/mxmkiv/gload/internal/ui"
 )
 
 func main() {
 
-	cfg, err := config.NewConfig("config.json")
+	fmt.Println(`
+    ________  ___       ________  ________  ________
+   |\   ____\|\  \     |\   __  \|\   __  \|\   ___ \
+   \ \  \___|\ \  \    \ \  \|\  \ \  \|\  \ \  \_|\ \
+    \ \  \  __\ \  \    \ \  \\\  \ \   __  \ \  \ \\ \
+     \ \  \|\  \ \  \____\ \  \\\  \ \  \ \  \ \  \_\\ \
+      \ \_______\ \_______\ \_______\ \__\ \__\ \_______\
+       \|_______|\|_______|\|_______|\|__|\|__|\|_______|
+  `)
+
+	configPath := flag.String("config", "", "path to config file")
+	flag.Parse()
+
+	if *configPath == "" {
+		fmt.Println("no --config file specified, using default: config.json")
+		*configPath = "config.json"
+	}
+
+	cfg, err := config.NewConfig(*configPath)
 	if err != nil {
 		log.Fatal("config error: ", err)
 	}
-	cfg.ShowAll()
+	cfg.PrintConfig()
 
 	metricsChannel := make(chan metrics.Metrics, 100)
 	HTTPClient := client.NewHTTPClient(cfg)
@@ -29,15 +49,23 @@ func main() {
 	defer cancel()
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	collector := metrics.NewCollector(metricsChannel)
+	wg.Add(2)
+	collector := metrics.NewCollector(cfg, metricsChannel)
 	go func() {
 		defer wg.Done()
 		collector.Start(ctx)
 	}()
 
+	go func() {
+		defer wg.Done()
+		ui.Progressbar(ctx, time.Duration(cfg.Time))
+	}()
+
 	wp.Start(ctx)
 	wg.Wait()
 
-	fmt.Printf("reqs: %v", collector.Counter)
+	aggregator := metrics.NewAggregator(collector.MetricsData, cfg)
+	aggregator.PrintResult()
+
+	//fmt.Printf("reqs: %v", collector.ReqsCounter)
 }

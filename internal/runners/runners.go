@@ -2,6 +2,7 @@ package runners
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -56,12 +57,14 @@ func worker(ctx context.Context, w *WorkerPool) {
 			if err != nil {
 				w.MetricsChannel <- metrics.Metrics{
 					StatusCode: 0,
-					Latency:    time.Duration(respTime),
+					Latency:    respTime,
 					Error:      err,
 				}
 				continue
 			}
-			defer resp.Body.Close()
+
+			io.Copy(io.Discard, resp.Body)
+			resp.Body.Close()
 
 			w.MetricsChannel <- metrics.Metrics{
 				StatusCode: resp.StatusCode,

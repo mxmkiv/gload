@@ -41,7 +41,7 @@ func NewConfig(fileName string) (*Config, error) {
 	// open file
 	f, err := os.Open(fileName)
 	if err != nil {
-		return nil, fmt.Errorf("open config file error: %e", err)
+		return nil, fmt.Errorf("open config file error: %w", err)
 	}
 	defer f.Close()
 
@@ -63,8 +63,23 @@ func NewConfig(fileName string) (*Config, error) {
 	return &cfg, nil
 }
 
-func (c *Config) ShowAll() {
-	fmt.Printf("source %s\n", c.Source)
-	fmt.Printf("uvs %d\n", c.UVs)
-	fmt.Printf("time %v\n", c.Time)
+func (c *Config) PrintConfig() {
+	const (
+		colorReset  = "\033[0m"
+		colorCyan   = "\033[36m"
+		colorYellow = "\033[33m"
+		colorGray   = "\033[90m"
+		colorBold   = "\033[1m"
+	)
+
+	line := colorGray + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" + colorReset
+
+	fmt.Println(line)
+	fmt.Printf("  %s%sConfiguration%s\n", colorBold, colorCyan, colorReset)
+	fmt.Println(line)
+	fmt.Printf("  ├─ target    %s%s%s\n", colorYellow, c.Source, colorReset)
+	fmt.Printf("  ├─ users     %s%d%s\n", colorYellow, c.UVs, colorReset)
+	fmt.Printf("  └─ duration  %s%v%s\n", colorYellow, time.Duration(c.Time), colorReset)
+	fmt.Println(line)
+	fmt.Println()
 }
