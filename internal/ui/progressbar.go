@@ -12,6 +12,7 @@ func Progressbar(ctx context.Context, t time.Duration) {
 	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 
+	const width = 40
 	start := time.Now()
 
 	for {
@@ -20,11 +21,11 @@ func Progressbar(ctx context.Context, t time.Duration) {
 			since := time.Since(start)
 			percent := float64(since) / float64(t)
 
-			const width = 40
 			filled := int(percent * width)
 			bar := strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
 			fmt.Printf("\r [%s] (%.1f%%)", bar, percent*100)
 		case <-ctx.Done():
+			fmt.Printf("\r [%s] (100.0%%)\n", strings.Repeat("█", width))
 			return
 		}
 	}
