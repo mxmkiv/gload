@@ -55,10 +55,10 @@ func worker(ctx context.Context, w *WorkerPool) {
 			respTime := time.Since(startTime)
 
 			if err != nil {
-				w.MetricsChannel <- metrics.Metrics{
-					StatusCode: 0,
-					Latency:    respTime,
-					Error:      err,
+				select {
+				case w.MetricsChannel <- metrics.Metrics{StatusCode: 0, Latency: respTime, Error: err}:
+				case <-ctx.Done():
+					return
 				}
 				continue
 			}
@@ -66,10 +66,10 @@ func worker(ctx context.Context, w *WorkerPool) {
 			io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 
-			w.MetricsChannel <- metrics.Metrics{
-				StatusCode: resp.StatusCode,
-				Latency:    time.Duration(respTime),
-				Error:      nil,
+			select {
+			case w.MetricsChannel <- metrics.Metrics{StatusCode: resp.StatusCode, Latency: time.Duration(respTime), Error: nil}:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}
