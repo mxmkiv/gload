@@ -41,7 +41,11 @@ func main() {
 	}
 	cfg.PrintConfig()
 
+<<<<<<< HEAD
 	metricsChannel := make(chan metrics.Metrics, 150)
+=======
+	metricsChannel := make(chan metrics.Metrics, 200)
+>>>>>>> bugFix
 	HTTPClient := client.NewHTTPClient(cfg)
 	wp := runners.NewWorkerPool(cfg, HTTPClient, metricsChannel)
 
