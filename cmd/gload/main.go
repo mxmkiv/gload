@@ -41,7 +41,7 @@ func main() {
 	}
 	cfg.PrintConfig()
 
-	metricsChannel := make(chan metrics.Metrics, 100)
+	metricsChannel := make(chan metrics.Metrics, 150)
 	HTTPClient := client.NewHTTPClient(cfg)
 	wp := runners.NewWorkerPool(cfg, HTTPClient, metricsChannel)
 
