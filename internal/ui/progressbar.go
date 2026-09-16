@@ -21,6 +21,13 @@ func Progressbar(ctx context.Context, t time.Duration) {
 			since := time.Since(start)
 			percent := float64(since) / float64(t)
 
+			if percent < 0 {
+				percent = 0
+			}
+			if percent > 1 {
+				percent = 1
+			}
+
 			filled := int(percent * width)
 			bar := strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
 			fmt.Printf("\r [%s] (%.1f%%)", bar, percent*100)
