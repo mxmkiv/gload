@@ -38,7 +38,6 @@ func (w *WorkerPool) Start(ctx context.Context) {
 	}
 
 	w.wg.Wait()
-
 	close(w.MetricsChannel)
 
 }
@@ -51,27 +50,25 @@ func worker(ctx context.Context, w *WorkerPool) {
 			return
 		default:
 			startTime := time.Now()
-			resp, err := w.HTTPClient.Get(w.config.Source)
+
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, w.config.Source, nil)
+			if err != nil {
+				return
+			}
+
+			resp, err := w.HTTPClient.Do(req)
+
 			respTime := time.Since(startTime)
 
 			if err != nil {
-				select {
-				case w.MetricsChannel <- metrics.Metrics{StatusCode: 0, Latency: respTime, Error: err}:
-				case <-ctx.Done():
-					return
-				}
+				w.MetricsChannel <- metrics.Metrics{StatusCode: 0, Latency: respTime, Error: err}
 				continue
 			}
 
-			io.Copy(io.Discard, resp.Body)
+			_, bodyErr := io.Copy(io.Discard, resp.Body)
 			resp.Body.Close()
 
-			select {
-			case w.MetricsChannel <- metrics.Metrics{StatusCode: resp.StatusCode, Latency: time.Duration(respTime), Error: nil}:
-			case <-ctx.Done():
-				return
-			}
+			w.MetricsChannel <- metrics.Metrics{StatusCode: resp.StatusCode, Latency: respTime, Error: bodyErr}
 		}
 	}
-
 }
