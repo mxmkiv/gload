@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 )
@@ -53,13 +54,21 @@ func NewConfig(fileName string) (*Config, error) {
 	}
 
 	//validate
-	if cfg.Source == "" {
-		return nil, fmt.Errorf("field source cant be empty")
+	parseUrl, err := url.Parse(cfg.Source)
+	if err != nil || parseUrl.Scheme == "" || parseUrl.Host == "" {
+		return nil, fmt.Errorf("invalid url: %v", err)
 	}
-	if cfg.UVs == 0 {
-		return nil, fmt.Errorf("field UVs cant be empty")
+	if parseUrl.Scheme != "http" && parseUrl.Scheme != "https" {
+		return nil, fmt.Errorf("target URL must use http or https")
 	}
 
+	if cfg.UVs <= 0 {
+		return nil, fmt.Errorf("field UVs cant be 0 or less")
+	}
+
+	if cfg.Time <= 0 {
+		return nil, fmt.Errorf("time must be greater than zero")
+	}
 	return &cfg, nil
 }
 
