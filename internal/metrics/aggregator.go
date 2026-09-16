@@ -59,10 +59,10 @@ func NewAggregator(m []Metrics, cfg *config.Config) *Aggregator {
 		latency = append(latency, req.Latency)
 		totalLatency += req.Latency
 
-		if req.StatusCode != http.StatusOK {
-			a.errorReqs++
-		} else {
+		if req.Error == nil && req.StatusCode >= http.StatusOK && req.StatusCode < http.StatusMultipleChoices {
 			a.successReqs++
+		} else {
+			a.errorReqs++
 		}
 
 		a.statusCodeStat[req.StatusCode]++
@@ -71,7 +71,7 @@ func NewAggregator(m []Metrics, cfg *config.Config) *Aggregator {
 	slices.Sort(latency)
 	a.min = latency[0]
 	a.max = latency[len(m)-1]
-	a.mid = latency[len(m)/2]
+	a.mid = median(latency)
 	a.avg = totalLatency / time.Duration(len(m))
 	a.RPS = float64(a.totalReqs) / a.duration.Seconds()
 
@@ -139,10 +139,31 @@ func (a *Aggregator) PrintResult() {
 	fmt.Println()
 }
 
-func percentile(s []time.Duration, p float64) time.Duration {
-	idx := int(float64(len(s)) * p / 100)
-	if idx >= len(s) {
-		idx = len(s) - 1
+func percentile(values []time.Duration, p float64) time.Duration {
+	if len(values) == 0 {
+		return 0
 	}
-	return s[idx]
+
+	position := float64(len(values)-1) * p / 100
+	lower := int(position)
+	upper := lower + 1
+
+	if upper >= len(values) {
+		return values[lower]
+	}
+
+	fraction := position - float64(lower)
+
+	result := float64(values[lower]) +
+		fraction*float64(values[upper]-values[lower])
+
+	return time.Duration(result)
+}
+
+func median(s []time.Duration) time.Duration {
+	if len(s)%2 == 0 {
+		return (s[len(s)/2] + s[len(s)/2-1]) / 2
+	}
+
+	return s[len(s)/2]
 }
