@@ -41,11 +41,7 @@ func main() {
 	}
 	cfg.PrintConfig()
 
-<<<<<<< HEAD
-	metricsChannel := make(chan metrics.Metrics, 150)
-=======
 	metricsChannel := make(chan metrics.Metrics, 200)
->>>>>>> bugFix
 	HTTPClient := client.NewHTTPClient(cfg)
 	wp := runners.NewWorkerPool(cfg, HTTPClient, metricsChannel)
 
@@ -57,7 +53,7 @@ func main() {
 	collector := metrics.NewCollector(cfg, metricsChannel)
 	go func() {
 		defer wg.Done()
-		collector.Start(ctx)
+		collector.Start()
 	}()
 
 	go func() {
@@ -71,5 +67,4 @@ func main() {
 	aggregator := metrics.NewAggregator(collector.MetricsData, cfg)
 	aggregator.PrintResult()
 
-	//fmt.Printf("reqs: %v", collector.ReqsCounter)
 }

@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"sync"
 	"time"
 
@@ -22,22 +21,10 @@ func NewCollector(cfg *config.Config, MetricsChannel <-chan Metrics) *Collector 
 	}
 }
 
-func (c *Collector) Start(ctx context.Context) {
+func (c *Collector) Start() {
 
-	for {
-		select {
-		case <-ctx.Done():
-			//fmt.Printf("collector stopped\n")
-			return
-		case val, ok := <-c.MetricsChannel:
-			if !ok {
-				return
-			}
-
-			c.MetricsData = append(c.MetricsData, val)
-
-			//fmt.Printf("latency time %v Status code: %v\n", val.Latency, val.StatusCode)
-		}
+	for metric := range c.MetricsChannel {
+		c.MetricsData = append(c.MetricsData, metric)
 	}
 
 }
